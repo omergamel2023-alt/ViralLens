@@ -1,6 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { GoogleGenAI, Type } from '@google/genai';
 import { PlatformId, AnalysisResult, AnalysisState, Platform, VideoData } from '../types/viral-lens.types';
+import { SECRET_API_KEY } from '../secrets';
 
 @Injectable({
   providedIn: 'root'
@@ -148,17 +149,17 @@ export class AnalysisService {
   }
 
   private async callGeminiAPI(video: VideoData, platform: Platform): Promise<AnalysisResult> {
-    // Priority: User Input Key > Environment Variable
+    // Priority: User Input Key > Secrets File > Environment Variable
     const envKey = process.env['API_KEY'];
     const userKey = this.state().apiKey;
-    const apiKey = userKey || envKey;
+    const apiKey = userKey || SECRET_API_KEY || envKey;
     
     // Check validity
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
       await new Promise(resolve => setTimeout(resolve, 1500));
       return {
         title: `[تنبيه: لا يوجد مفتاح] تحليل افتراضي لـ ${platform.name}`,
-        caption: `للحصول على تحليل حقيقي، يرجى لصق مفتاح Gemini API الخاص بك في الحقل الموجود أعلى الشاشة.\n\nحالياً، هذا مجرد نص توضيحي لأن التطبيق يفتقد للمفتاح.`,
+        caption: `للحصول على تحليل حقيقي، يرجى لصق مفتاح Gemini API الخاص بك في الحقل الموجود أعلى الشاشة.\n\nأو قم بوضعه في ملف src/secrets.ts`,
         hashtags: ['#تنبيه', '#أدخل_المفتاح', '#تجربة', `#${platform.id}`],
         strategy: `الرجاء إدخال مفتاح API في الحقل المخصص لتفعيل الذكاء الاصطناعي.`
       };
