@@ -52,4 +52,9 @@ export class AppComponent {
   removeVideo() {
     this.service.removeVideo();
   }
+
+  updateApiKey(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.service.setApiKey(input.value);
+  }
 }

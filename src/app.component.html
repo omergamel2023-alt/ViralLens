@@ -19,6 +19,28 @@
     <!-- Main Card -->
     <div class="glass-panel rounded-2xl md:rounded-3xl p-4 md:p-10 shadow-xl md:shadow-2xl space-y-6 md:space-y-10">
       
+      <!-- API Key Input Section -->
+      <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+        <label class="block text-xs font-bold text-indigo-900 uppercase tracking-wider mb-2">مفتاح Google Gemini API</label>
+        <div class="relative">
+          <input 
+            type="password" 
+            [value]="service.apiKey() || ''" 
+            (input)="updateApiKey($event)"
+            placeholder="لصق المفتاح هنا (يبدأ بـ AIza...)" 
+            class="w-full pl-4 pr-10 py-3 rounded-lg border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all bg-white/80"
+          >
+          <div class="absolute inset-y-0 right-0 pl-3 flex items-center pointer-events-none pr-3">
+             <svg class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+             </svg>
+          </div>
+        </div>
+        <p class="mt-2 text-[10px] text-indigo-600/80">
+          * يتم حفظ المفتاح محلياً في متصفحك فقط ولا يتم إرساله لأي خادم آخر.
+        </p>
+      </div>
+
       <!-- Platform Selector -->
       <app-platform-selector></app-platform-selector>
 

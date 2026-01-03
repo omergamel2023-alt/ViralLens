@@ -28,4 +28,5 @@ export interface AnalysisState {
   error: string | null;
   result: AnalysisResult | null;
   video: VideoData | null;
+  apiKey: string | null; // Added API Key to state
 }

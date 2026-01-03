@@ -12,7 +12,8 @@ export class AnalysisService {
     isLoading: false,
     error: null,
     result: null,
-    video: null
+    video: null,
+    apiKey: localStorage.getItem('gemini_api_key') || null // Load from local storage if available
   });
 
   // Selectors
@@ -21,6 +22,7 @@ export class AnalysisService {
   readonly error = computed(() => this.state().error);
   readonly result = computed(() => this.state().result);
   readonly video = computed(() => this.state().video);
+  readonly apiKey = computed(() => this.state().apiKey);
 
   // Platform Definitions
   readonly platforms: Platform[] = [
@@ -59,9 +61,14 @@ export class AnalysisService {
     this.state.update(s => ({ ...s, currentPlatform: id, result: null, error: null }));
   }
 
+  setApiKey(key: string) {
+    const trimmedKey = key.trim();
+    localStorage.setItem('gemini_api_key', trimmedKey); // Persist for convenience
+    this.state.update(s => ({ ...s, apiKey: trimmedKey, error: null }));
+  }
+
   async setVideoFile(file: File) {
-    // Safety Check: Limit file size to ~25MB to prevent browser freeze during Base64 conversion
-    // and to respect API payload limits for inline data.
+    // Safety Check: Limit file size to ~25MB
     const maxSize = 25 * 1024 * 1024; // 25MB
     if (file.size > maxSize) {
       this.state.update(s => ({
@@ -79,7 +86,7 @@ export class AnalysisService {
         ...s, 
         video: videoData, 
         isLoading: false, 
-        result: null // Reset result on new video
+        result: null 
       }));
     } catch (e) {
       this.state.update(s => ({ 
@@ -109,12 +116,16 @@ export class AnalysisService {
     try {
       const result = await this.callGeminiAPI(video, platform);
       this.state.update(s => ({ ...s, isLoading: false, result }));
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      let errorMessage = 'فشل التحليل. تأكد من صحة مفتاح API.';
+      if (e.message && e.message.includes('403')) {
+        errorMessage = 'مفتاح API غير صالح. يرجى التأكد من نسخه بشكل صحيح.';
+      }
       this.state.update(s => ({ 
         ...s, 
         isLoading: false, 
-        error: 'فشل التحليل. تأكد من إعداد مفتاح API بشكل صحيح في ملف .env' 
+        error: errorMessage
       }));
     }
   }
@@ -137,23 +148,19 @@ export class AnalysisService {
   }
 
   private async callGeminiAPI(video: VideoData, platform: Platform): Promise<AnalysisResult> {
-    // ---------------------------------------------------------
-    // هام: يتم قراءة المفتاح هنا من ملف .env
-    // تأكد من وجود السطر التالي في ملف .env الخاص بك:
-    // API_KEY=AIzaSy...
-    // ---------------------------------------------------------
-    const apiKey = process.env['API_KEY'];
+    // Priority: User Input Key > Environment Variable
+    const envKey = process.env['API_KEY'];
+    const userKey = this.state().apiKey;
+    const apiKey = userKey || envKey;
     
-    // Check if key is missing or is clearly the placeholder
+    // Check validity
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
-      // Mock fallback: إذا لم يتم العثور على المفتاح، نعرض محاكاة للنتيجة
-      // لكي لا يتوقف التطبيق عن العمل أثناء التجربة
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       return {
-        title: `[تنبيه: مفتاح API مفقود] تحليل افتراضي لـ ${platform.name}`,
-        caption: `هذه نتيجة محاكاة لأن التطبيق لم يجد مفتاح Gemini API صالحاً.\n\nللحصول على تحليل حقيقي بالذكاء الاصطناعي:\n1. افتح ملف .env في المجلد الرئيسي.\n2. استبدل النص الموجود بمفتاحك: API_KEY=AIzaSy...\n3. أعد تشغيل التطبيق.`,
-        hashtags: ['#تنبيه', '#API_KEY_MISSING', '#قم_بإعداد_المفتاح', `#${platform.id}`],
-        strategy: `لم يتم الاتصال بـ Gemini AI. يرجى إضافة مفتاح API في ملف .env لتفعيل الذكاء الاصطناعي.`
+        title: `[تنبيه: لا يوجد مفتاح] تحليل افتراضي لـ ${platform.name}`,
+        caption: `للحصول على تحليل حقيقي، يرجى لصق مفتاح Gemini API الخاص بك في الحقل الموجود أعلى الشاشة.\n\nحالياً، هذا مجرد نص توضيحي لأن التطبيق يفتقد للمفتاح.`,
+        hashtags: ['#تنبيه', '#أدخل_المفتاح', '#تجربة', `#${platform.id}`],
+        strategy: `الرجاء إدخال مفتاح API في الحقل المخصص لتفعيل الذكاء الاصطناعي.`
       };
     }
 
@@ -197,7 +204,6 @@ export class AnalysisService {
       ],
       config: {
         responseMimeType: 'application/json',
-        // High thinking budget for "Video Understanding" and deep analysis
         thinkingConfig: { thinkingBudget: 2048 }, 
         responseSchema: {
           type: Type.OBJECT,
