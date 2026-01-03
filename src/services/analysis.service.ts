@@ -115,7 +115,7 @@ export class AnalysisService {
       this.state.update(s => ({ 
         ...s, 
         isLoading: false, 
-        error: 'فشل التحليل. يرجى المحاولة مرة أخرى أو التأكد من مفتاح API.' 
+        error: 'فشل التحليل. تأكد من إعداد مفتاح API بشكل صحيح في ملف .env' 
       }));
     }
   }
@@ -138,22 +138,27 @@ export class AnalysisService {
   }
 
   private async callGeminiAPI(video: VideoData, platform: Platform): Promise<AnalysisResult> {
+    // ---------------------------------------------------------
+    // هام: يتم قراءة المفتاح هنا من ملف .env
+    // تأكد من وجود السطر التالي في ملف .env الخاص بك:
+    // API_KEY=AIzaSy...
+    // ---------------------------------------------------------
     const apiKey = process.env['API_KEY'];
-    if (!apiKey) {
-      // Mock fallback
+    
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
+      // Mock fallback: إذا لم يتم العثور على المفتاح، نعرض محاكاة للنتيجة
+      // لكي لا يتوقف التطبيق عن العمل أثناء التجربة
       await new Promise(resolve => setTimeout(resolve, 2000));
       return {
-        title: `[محاكاة] تحليل فيديو فيروسي لمنصة ${platform.name}`,
-        caption: `[محاكاة] بما أنه لا يوجد مفتاح API، هذا تحليل افتراضي للفيديو "${video.name}". في الواقع، سيقوم Gemini بمشاهدة الفيديو وتحليله.`,
-        hashtags: ['#محاكاة', `#${platform.id}`, '#gemini', '#تجربة'],
-        strategy: `استراتيجية افتراضية لـ ${platform.name} بناءً على سياق الفيديو.`
+        title: `[تنبيه: مفتاح API مفقود] تحليل افتراضي لـ ${platform.name}`,
+        caption: `هذه نتيجة محاكاة لأن التطبيق لم يجد مفتاح Gemini API صالحاً.\n\nللحصول على تحليل حقيقي بالذكاء الاصطناعي:\n1. أنشئ ملفاً باسم .env في المجلد الرئيسي.\n2. أضف مفتاحك بداخله هكذا: API_KEY=AIzaSy...\n3. أعد تشغيل التطبيق.`,
+        hashtags: ['#تنبيه', '#API_KEY_MISSING', '#قم_بإعداد_المفتاح', `#${platform.id}`],
+        strategy: `لم يتم الاتصال بـ Gemini AI. يرجى إضافة مفتاح API في ملف .env لتفعيل الذكاء الاصطناعي.`
       };
     }
 
     const ai = new GoogleGenAI({ apiKey });
     
-    // Using gemini-2.5-flash as the "Pro" equivalent for this applet environment 
-    // that supports both video understanding and thinking.
     const prompt = `
       تصرف كخبير ومختص في استراتيجيات وسائل التواصل الاجتماعي. قم بتحليل هذا الفيديو من البداية إلى النهاية.
       حدد العناصر البصرية الرئيسية، الحالة المزاجية، الحركة، وأي كلمات منطوقة.
